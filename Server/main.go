@@ -36,18 +36,20 @@ func main() {
 
 	for {
 		buf := make([]byte, 1024)
-		_, addr, err := udpServer.ReadFrom(buf)
+		n, addr, err := udpServer.ReadFrom(buf)
 		if err != nil {
 			continue
 		}
-		go response(udpServer, addr, buf)
+		fmt.Printf("packet-received: bytes=%d from=%s\n", n, addr.String())
+
+		go response(udpServer, addr, buf[:n])
 	}
 
 }
 
 func response(udpServer net.PacketConn, addr net.Addr, buf []byte) {
 	time := time.Now().Format(time.ANSIC)
-	responseStr := fmt.Sprintf("time received: %v. Your message: %v!", time, string(buf))
 
+	responseStr := fmt.Sprintf("time received: %v. Your message: %v!", time, string(buf))
 	udpServer.WriteTo([]byte(responseStr), addr)
 }

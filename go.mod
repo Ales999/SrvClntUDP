@@ -1,3 +1,3 @@
 module github.com/ales999/SrvClntUDP
 
-go 1.20
+go 1.19

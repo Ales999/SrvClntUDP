@@ -45,7 +45,7 @@ func main() {
 	//close the connection
 	defer conn.Close()
 
-	_, err = conn.Write([]byte("This is a UDP message"))
+	_, err = conn.Write([]byte("Work a UDP message"))
 	if err != nil {
 		println("Write data failed:", err.Error())
 		os.Exit(1)
@@ -53,11 +53,13 @@ func main() {
 
 	// buffer to get data
 	received := make([]byte, 1024)
-	_, err = conn.Read(received)
+	// Number of received bytes
+        var n int
+	n, err = conn.Read(received)
 	if err != nil {
 		println("Read data failed:", err.Error())
 		os.Exit(1)
 	}
 
-	println(string(received))
+	println(string(received[:n]))
 }
