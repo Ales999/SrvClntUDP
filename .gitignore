@@ -12,5 +12,12 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
 bin/
+
+# binary fiiles
+udpServer
+udpClient
+udpServer.exe
+udpClient.exe
+
