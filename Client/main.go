@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
 	"strconv"
+	"time"
 	"unicode"
 )
 
@@ -27,7 +29,7 @@ func validatePort(portStr string) (int, bool) {
 		return 0, false
 	}
 
-	// Check that all characters are digits
+	// Проверяем, что все символы - цифры
 	for _, c := range portStr {
 		if !unicode.IsDigit(c) {
 			return 0, false
@@ -48,7 +50,7 @@ func main() {
 	host := os.Args[1]
 	portStr := os.Args[2]
 
-	// Validate inputs
+	// Проверяем вводы
 	if !validateIP(host) {
 		fmt.Printf("Ошибка: '%s' - не валидный IP адрес\n", host)
 		PrintUsage()
@@ -62,7 +64,7 @@ func main() {
 		return
 	}
 
-	fmt.Printf("Подключено к: %s с портом %d\n", host, port)
+	fmt.Printf("Отправляю UDP сообщение на адрес: %s:%d\n", host, port)
 
 	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
@@ -70,7 +72,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	conn, err := net.DialUDP("udp", nil, addr)
+	conn, err := net.DialUDP("udp4", nil, addr)
 	if err != nil {
 		fmt.Printf("Ошибка при установлении соединения: %v\n", err)
 		os.Exit(1)
@@ -82,12 +84,36 @@ func main() {
 		os.Exit(1)
 	}
 
-	received := make([]byte, 2048) // Увеличили буфер для большей гибкости
-	n, err := conn.Read(received)
-	if err != nil {
-		fmt.Printf("Ошибка при чтении ответа: %v\n", err)
+	fmt.Println("Сообщение успешно отправлено, ожидаем ответ в течение трех секунд...")
+
+	// Создаем контекст с таймаутом в 3 секунды
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	dataChan := make(chan []byte)
+
+	// Горутина для чтения данных
+	go func() {
+		received := make([]byte, 2048)
+		n, err := conn.Read(received)
+		if err != nil {
+			fmt.Printf("Ошибка при чтении ответа: %v\n", err)
+			dataChan <- nil // или можно отправить ошибку
+			return
+		}
+		dataChan <- received[:n]
+	}()
+
+	// Ожидаем данные или completion контекста
+	select {
+	case data := <-dataChan:
+		if data == nil {
+			fmt.Println("Ошибка при чтении ответа")
+			os.Exit(1)
+		}
+		fmt.Println(string(data))
+	case <-ctx.Done():
+		fmt.Println("!!! Внимание !!! - ответ так не получен в течение 3 секунд :-(")
 		os.Exit(1)
 	}
-
-	fmt.Println(string(received[:n]))
 }
