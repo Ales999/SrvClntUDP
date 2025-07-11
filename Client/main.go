@@ -7,59 +7,44 @@ import (
 )
 
 func PrintUsage() {
-	fmt.Println("Usage example:")
+	fmt.Println("Пример использования:")
 	fmt.Printf("%s serverip port\n", os.Args[0])
-	fmt.Println("Example: client.exe 192.168.1.1 1845")
+	fmt.Println("Пример: udpClient.exe 192.168.1.1 1845")
 }
 
+const message = "Работа с UDP сообщением"
+
 func main() {
-
-	var srvhost string
-	// Порт который будем слушать
-	var srvport string
-
-	if len(os.Args) > 2 {
-		srvhost = os.Args[1]
-		srvport = os.Args[2]
-	} else {
+	if len(os.Args) < 3 {
 		PrintUsage()
 		return
 	}
 
-	fmt.Print("Connected to: ", srvhost)
-	fmt.Println(" with port", srvport)
-
-	udpServer, err := net.ResolveUDPAddr("udp", srvhost+":"+srvport)
-
+	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%s", os.Args[1], os.Args[2]))
 	if err != nil {
-		println("ResolveUDPAddr failed:", err.Error())
+		fmt.Printf("Не удалось разрешить адрес: %v\n", err)
 		os.Exit(1)
 	}
 
-	conn, err := net.DialUDP("udp", nil, udpServer)
+	conn, err := net.DialUDP("udp", nil, addr)
 	if err != nil {
-		println("Listen failed:", err.Error())
+		fmt.Printf("Не удалось установить UDP соединение: %v\n", err)
 		os.Exit(1)
 	}
-
-	//close the connection
 	defer conn.Close()
 
-	_, err = conn.Write([]byte("Work a UDP message"))
-	if err != nil {
-		println("Write data failed:", err.Error())
+	fmt.Printf("Подключено к: %s с портом %s\n", os.Args[1], os.Args[2])
+
+	if _, err := conn.Write([]byte(message)); err != nil {
+		fmt.Printf("Не удалось отправить сообщение: %v\n", err)
 		os.Exit(1)
 	}
 
-	// buffer to get data
 	received := make([]byte, 1024)
-	// Number of received bytes
-        var n int
-	n, err = conn.Read(received)
+	n, err := conn.Read(received)
 	if err != nil {
-		println("Read data failed:", err.Error())
+		fmt.Printf("Не удалось прочитать ответ: %v\n", err)
 		os.Exit(1)
 	}
-
-	println(string(received[:n]))
+	fmt.Println(string(received[:n]))
 }
