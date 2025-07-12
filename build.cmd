@@ -1,5 +1,6 @@
 @echo off
 
-go build -o udpClient.exe Client/main.go
-go build -o udpServer.exe Server/main.go
+go build -ldflags="-s" -o udpClient.exe Client/udpClient.go
+go build -ldflags="-s" -o udpServer.exe Server/udpServer.go
+
 
